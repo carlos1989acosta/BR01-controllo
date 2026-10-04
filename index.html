@@ -59,7 +59,7 @@ async function loadWord(file){
 function refreshMonths(){
  const sel=document.getElementById('month'), current=sel.value;
  const found=[...new Set(allData.days.map(d=>d.key.slice(0,7)))].sort();
- sel.innerHTML='<option value="">Tutti i mesi</option>'+found.map(v=>{const [y,m]=v.split('-');const names=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];return `<option value="${v}">${names[+m-1]} ${y}</option>`}).join('');
+ sel.innerHTML='<option value="">Tutti i mesi</option>'+found.map(v=>{const [y,m]=v.split('-');const names=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];return `<option value="${v}">${names[+m-1]} ${y}</option>`}).join('');
  if(found.includes(current))sel.value=current; else if(found.length===1)sel.value=found[0];
 }
 function filtered(){const m=document.getElementById('month').value;return allData.days.filter(d=>!m||d.key.startsWith(m));}
