@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="it">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dashboard BR01 desde report.docx</title>
@@ -105,7 +105,7 @@ input,button,select{border-radius:9px;border-color:#cfe1ef}button{background:lin
 </main>
 <script>
 let allData={days:[],comments:{},hours:Array.from({length:16},(_,i)=>String(i+6))},chart,errorPie;
-const months={ene:0,feb:1,mar:2,abr:3,may:4,jun:5,jul:6,ago:7,sep:8,set:8,oct:9,nov:10,dic:11};
+const months={ene:0,feb:1,mar:2,abr:3,may:4,jun:5,jul:6,ago:7,sep:8,set:8,ott:9,oct:9,nov:10,dic:11};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function iso(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
 function parseDocDate(label,year){const m=String(label).trim().toLowerCase().match(/^(\d{1,2})[-\/]([a-záéíóú]{3,})/i);if(!m)return null;const mon=months[m[2].slice(0,3)];return mon===undefined?null:iso(year,mon,+m[1])}
@@ -250,7 +250,7 @@ function showErrorComments(label,days,comments){
 function refreshMonths(){
  const sel=document.getElementById('month'), current=sel.value;
  const found=[...new Set(allData.days.map(d=>d.key.slice(0,7)))].sort();
- sel.innerHTML='<option value="">Tutti i mesi</option>'+found.map(v=>{const [y,m]=v.split('-');const names=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];return `<option value="${v}">${names[+m-1]} ${y}</option>`}).join('');
+ sel.innerHTML='<option value="">Tutti i mesi</option>'+found.map(v=>{const [y,m]=v.split('-');const names=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];return `<option value="${v}">${names[+m-1]} ${y}</option>`}).join('');
  if(found.includes(current))sel.value=current; else if(found.length===1)sel.value=found[0];
 }
 function filtered(){const m=document.getElementById('month').value;return allData.days.filter(d=>!m||d.key.startsWith(m));}
