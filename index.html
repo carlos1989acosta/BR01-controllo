@@ -385,7 +385,7 @@ setTimeout(reloadData,0);
   const book=XLSX.read(await response.arrayBuffer(),{type:'array',cellDates:true});
   const sheet=book.Sheets['Hist_Alarms'];if(!sheet)throw Error('Foglio Hist_Alarms non trovato');
   const rows=XLSX.utils.sheet_to_json(sheet,{defval:'',raw:true});
-  const result=rows.map(r=>{const h=Object.fromEntries(Object.entries(r).map(([k,v])=>[key(k),v]));return [datetime(h.tsalarm||h.data),String(h.zone??''),String(h.alarmcode??''),String(h.description??''),datetime(h.tsreset||''),String(h.id??'')]}).filter(r=>/^\d{4}-\d{2}-\d{2} /.test(r[0]));
+  const result=rows.map(r=>{const h=Object.fromEntries(Object.entries(r).map(([k,v])=>[key(k),v]));return [datetime(h.tsalarm||h.data),String(h.zone??''),String(h.alarmcode??''),String(h.description??''),datetime(h.tsreset||''),String(h.id??'')]}).filter(r=>/^\d{4}-\d{2}-\d{2} /.test(r[0]) && !/^ALB(?:[-_ ]|$)/i.test(r[2].trim()) && r[1].trim().toUpperCase()!=='BR02');
   alarms=result;byDay=new Map();for(const a of alarms){const k=a[0].slice(0,10);if(!byDay.has(k))byDay.set(k,[]);byDay.get(k).push(a)}
   return alarms.length;
  };
