@@ -421,12 +421,31 @@ setTimeout(reloadData,0);
   const rows=XLSX.utils.sheet_to_json(sheet,{defval:'',raw:true});
   // Esclusioni permanenti: applicate prima di aggiornare commenti e grafici.
   const excludedCodes=new Set(['A037','A030','A039','A035']);
+  // Codici aggiuntivi esclusi permanentemente dalla lettura Excel.
+  const excludedFullCodes=new Set([
+    'BHB01-098','BHB01-181','BHB01-133','BHB01-257','BHB-123',
+    'BHB01-197','BHB01-033','BHB01-040','BHB01-058','BHB01-097',
+    'BHB01-102','BHB01-109','BHB01-110','BHB01-132','BHB01-177',
+    'BHB01-200','BHB01-260','BR01-009','BR01-099'
+  ]);
+  const normalizeFullCode=v=>String(v??'').toUpperCase().replace(/[–—−_]/g,'-').replace(/\s+/g,'').replace(/^(BHB01|BHB|BR01)-?(\d{3})$/,'$1-$2');
+  const excludedFullCodePattern=/(?:^|[^A-Z0-9])(?:BHB01|BHB|BR01)\s*[-–—_]?\s*\d{3}(?!\d)/gi;
+  const hasExcludedFullCode=r=>{
+    // Alcuni export separano zona e codice, altri includono il prefisso nel codice.
+    const candidates=[r[2],r[1]+'-'+r[2],r[3]];
+    return candidates.some(value=>{
+      const normalized=normalizeFullCode(value);
+      if(excludedFullCodes.has(normalized))return true;
+      const matches=String(value??'').toUpperCase().match(excludedFullCodePattern)||[];
+      return matches.some(m=>excludedFullCodes.has(normalizeFullCode(m.trim())));
+    });
+  };
   const excludedDescription=/(?:gen\s*[-–—:]?\s*centralina\s+barriere|emergenza\s+pulsantiera|esclusione\s+sicurezze|pulsantiera\s+inserita\s+in\s+automatico|emergenza\s+centralina)/i;
   const isExcludedAlarm=r=>{
     const code=r[2].trim().toUpperCase();
     const description=r[3];
     const normalized=code.replace(/[\s_-]/g,'');
-    return excludedCodes.has(normalized) || excludedDescription.test(description) ||
+    return hasExcludedFullCode(r) || excludedCodes.has(normalized) || excludedDescription.test(description) ||
       // Alcuni export indicano il codice come suffisso (es. BR01-A037).
       /(?:^|[^A-Z0-9])A(?:037|030|039|035)(?:$|[^A-Z0-9])/i.test(code);
   };
