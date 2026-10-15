@@ -99,10 +99,10 @@ input,button,select{border-radius:9px;border-color:#cfe1ef}button{background:lin
 </div>
 <div class="hint"></div>
 <div id="status"></div></section>
-<section class="card" id="alarmsPanel"><h2>Allarmi Excel · Registro cronologico</h2><div class="controls" style="margin-bottom:12px"><div class="field"><label>File Excel aggiornato</label><input type="file" id="alarmExcelFile" accept=".xlsx,.xls"></div><div class="field"><button type="button" id="alarmConnect">Collega Excel per aggiornamenti</button></div><div class="field"><button type="button" id="alarmRefresh">Rileggi Excel</button></div></div><p class="hint" id="alarmSyncStatus">Dati Excel iniziali incorporati. Seleziona il file aggiornato oppure collegalo per rileggerlo con un clic.</p><div class="controls"><div class="field"><label>Giorno</label><input id="alarmDay" type="date"></div><div class="field"><label>Cerca codice, zona o descrizione</label><input id="alarmSearch" type="search" placeholder="Es. BR01, BHB, sensore"></div><div class="field"><label>Zona</label><select id="alarmZone"><option value="">Tutte le zone</option></select></div><div class="field"><button type="button" id="alarmClear">Mostra tutti</button></div></div><p class="hint" id="alarmInfo"></p><div class="alarm-table-scroll"><table class="alarm-table"><thead><tr><th>Data e ora allarme</th><th>Zona</th><th>Codice</th><th>Descrizione</th><th>Data e ora ripristino</th></tr></thead><tbody id="alarmRows"></tbody></table></div><div class="hint">Gli allarmi sono importati dal foglio Hist_Alarms del file Excel. Dopo aver salvato le modifiche al file Excel, premi Rileggi Excel (se collegato) oppure seleziona di nuovo il file. Clicca una data nel grafico per vedere gli allarmi e i commenti dello stesso giorno. La tabella mostra fino a 500 risultati per volta.</div></section>
-<section class="stats"><div class="stat">Giorni visibili<b id="days">0</b></div><div class="stat">Totale visibile<b id="total">0</b></div><div class="stat">Media giornaliera<b id="avg">0</b></div><div class="stat">Commenti<b id="commentsCount">0</b></div></section>
+
+<div class="hint" id="excelFixedStatus">Allarmi Excel integrati nella lista commenti.</div><section class="stats"><div class="stat">Giorni visibili<b id="days">0</b></div><div class="stat">Totale visibile<b id="total">0</b></div><div class="stat">Media giornaliera<b id="avg">0</b></div><div class="stat">Commenti<b id="commentsCount">0</b></div></section>
 <div class="charts-side-by-side"><section class="card"><div class="color-legend" aria-label="Significato dei colori"><div class="item"><span class="dot green"></span><b>Verde:</b> 18 o più prelievi/ora</div><div class="item"><span class="dot yellow"></span><b>Arancio:</b> da 14 a 17 prelievi/ora</div><div class="item"><span class="dot red"></span><b>Rosso:</b> da 1 a 13 prelievi/ora</div></div><div class="chart-wrap"><canvas id="chart"></canvas></div></section><div class="error-section-layout"><section class="card"><h2>Errori per codice</h2><div class="chart-wrap" style="height:470px"><canvas id="errorPie"></canvas></div></section><section class="card error-list-card"><h2>Dettagli errori</h2><div id="errorComments" class="empty error-comments-scroll">Fai clic su un settore del grafico per vedere i commenti associati.</div></section></div></div>
-<section class="card"><h2 id="commentsTitle">Commenti del giorno</h2><div id="prelieviRow" class="prelievi-row"><span>Prelievi effettuati:</span> Seleziona un giorno.</div><div class="shift-stats"><div class="shift-stat"><span>Turno mattina · 06:00–14:00</span><b id="morningShift">Totale: 0 · Media: 0</b></div><div class="shift-stat"><span>Turno pomeriggio · 14:00–22:00</span><b id="afternoonShift">Totale: 0 · Media: 0</b></div></div><div id="commentsContent" class="empty">Fai clic su una barra per vedere i commenti.</div></section>
+<section class="card"><h2 id="commentsTitle">Commenti e allarmi del giorno</h2><div id="prelieviRow" class="prelievi-row"><span>Prelievi effettuati:</span> Seleziona un giorno.</div><div class="shift-stats"><div class="shift-stat"><span>Turno mattina · 06:00–14:00</span><b id="morningShift">Totale: 0 · Media: 0</b></div><div class="shift-stat"><span>Turno pomeriggio · 14:00–22:00</span><b id="afternoonShift">Totale: 0 · Media: 0</b></div></div><div id="commentsContent" class="empty">Fai clic su una barra per vedere commenti e allarmi del giorno.</div></section>
 
 </main>
 <script>
@@ -372,7 +372,7 @@ function renderComment(x){
  return `<div class="comment-item">${esc(text)}</div>`;
 }
 function bindCommentClicks(){document.querySelectorAll('.comment-item.structured').forEach(el=>{const toggle=()=>{el.classList.toggle('open');el.setAttribute('aria-expanded',el.classList.contains('open')?'true':'false')};el.addEventListener('click',toggle);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}})})}
-function showComments(key){if(window.selectExcelAlarmDay)window.selectExcelAlarmDay(key);const list=allData.comments[key]||[],day=allData.days.find(d=>d.key===key);const vals=day?.values||[];const mt=vals.slice(0,8).reduce((a,b)=>a+(Number(b)||0),0),at=vals.slice(8,16).reduce((a,b)=>a+(Number(b)||0),0);morningShift.textContent=`Totale: ${mt} · Media: ${(mt/8).toFixed(1)}`;afternoonShift.textContent=`Totale: ${at} · Media: ${(at/8).toFixed(1)}`;commentsTitle.textContent='Commenti del giorno: '+key;const shown=[...vals];while(shown.length<16)shown.push('—');const horarios=Array.from({length:16},(_,i)=>`${String(i+6).padStart(2,'0')}:00–${String(i+7).padStart(2,'0')}:00`);prelieviRow.innerHTML=`<span>Prelievi effettuati · ${esc(day?.label||key)}:</span>`+shown.map((v,i)=>`<span class="v"><small>${horarios[i]}</small><strong>${esc(v)}</strong></span>`).join('')+`<span class="v total"><small>Totale del giorno</small><strong>${day?.total??0}</strong></span>`;commentsContent.innerHTML=list.length?list.map(renderComment).join(''):'<div class="empty">Non ci sono commenti registrati per questo giorno.</div>';bindCommentClicks()}
+function showComments(key){const list=allData.comments[key]||[],day=allData.days.find(d=>d.key===key);const vals=day?.values||[];const mt=vals.slice(0,8).reduce((a,b)=>a+(Number(b)||0),0),at=vals.slice(8,16).reduce((a,b)=>a+(Number(b)||0),0);morningShift.textContent=`Totale: ${mt} · Media: ${(mt/8).toFixed(1)}`;afternoonShift.textContent=`Totale: ${at} · Media: ${(at/8).toFixed(1)}`;commentsTitle.textContent='Commenti e allarmi del giorno: '+key;const shown=[...vals];while(shown.length<16)shown.push('—');const horarios=Array.from({length:16},(_,i)=>`${String(i+6).padStart(2,'0')}:00–${String(i+7).padStart(2,'0')}:00`);prelieviRow.innerHTML=`<span>Prelievi effettuati · ${esc(day?.label||key)}:</span>`+shown.map((v,i)=>`<span class="v"><small>${horarios[i]}</small><strong>${esc(v)}</strong></span>`).join('')+`<span class="v total"><small>Totale del giorno</small><strong>${day?.total??0}</strong></span>`;commentsContent.innerHTML=window.renderMergedDay?window.renderMergedDay(key,list): (list.length?list.map(renderComment).join(''):'<div class="empty">Nessun commento.</div>');bindCommentClicks()}
 
 const daysEl=document.getElementById('days'),totalEl=document.getElementById('total'),avgEl=document.getElementById('avg'),morningShift=document.getElementById('morningShift'),afternoonShift=document.getElementById('afternoonShift'),prelieviRow=document.getElementById('prelieviRow');
 async function reloadData(){const st=document.getElementById('status');st.className='';st.textContent='Aggiornamento di report.docx...';try{const res=await fetch('report.docx?ts='+Date.now(),{cache:'no-store'});if(!res.ok)throw new Error('Impossibile aprire report.docx ('+res.status+')');const blob=await res.blob();const file=new File([blob],'report.docx',{type:blob.type||'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});allData=await loadWord(file);refreshMonths();render();st.className='ok';st.textContent=`Dati aggiornati — ${allData.days.length} giorni e ${Object.values(allData.comments).reduce((a,b)=>a+b.length,0)} commenti.`;}catch(err){st.className='error';st.textContent='Errore durante la lettura di report.docx: '+err.message+'. Apri il progetto tramite un server web (non direttamente come file://).';}}
@@ -419,60 +419,34 @@ reloadData();
 <script>
 (function(){
 let alarms=JSON.parse(document.getElementById('excelAlarmData').textContent);
-const day=document.getElementById('alarmDay'),search=document.getElementById('alarmSearch'),zone=document.getElementById('alarmZone'),body=document.getElementById('alarmRows'),info=document.getElementById('alarmInfo');
-const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function refreshZones(){zone.innerHTML='<option value="">Tutte le zone</option>';const zones=[...new Set(alarms.map(a=>a[1]).filter(Boolean))].sort();zones.forEach(z=>{const o=document.createElement('option');o.value=z;o.textContent=z;zone.appendChild(o)});}refreshZones();
-alarms.sort((a,b)=>b[0].localeCompare(a[0]));
-function update(){const d=day.value,q=search.value.trim().toLowerCase(),z=zone.value;const matches=alarms.filter(a=>(!d||a[0].startsWith(d))&&(!z||a[1]===z)&&(!q||a.slice(0,6).some(v=>v.toLowerCase().includes(q))));info.textContent=`${matches.length.toLocaleString('it-IT')} allarmi trovati su ${alarms.length.toLocaleString('it-IT')} registrazioni Excel${d?' · '+d:''}`;body.innerHTML=matches.slice(0,500).map(a=>'<tr>'+a.slice(0,5).map((v,i)=>'<td>'+ (v?escapeHtml(v):'<span class="muted">—</span>')+'</td>').join('')+'</tr>').join('')||'<tr><td colspan="5">Nessun allarme per i filtri selezionati.</td></tr>';}
-[day,search,zone].forEach(e=>e.addEventListener('input',update));document.getElementById('alarmClear').addEventListener('click',()=>{day.value='';search.value='';zone.value='';update()});
-
-const syncStatus=document.getElementById('alarmSyncStatus');
-const fileInput=document.getElementById('alarmExcelFile');
-let linkedHandle=null, lastFile=null;
-const norm=v=>String(v??'').trim();
-function excelDate(v){
- if(v==null||v==='')return '';
- if(v instanceof Date)return [v.getFullYear(),String(v.getMonth()+1).padStart(2,'0'),String(v.getDate()).padStart(2,'0')].join('-')+' '+[v.getHours(),v.getMinutes(),v.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
- if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v);if(d)return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')} ${String(d.H).padStart(2,'0')}:${String(d.M).padStart(2,'0')}:${String(Math.floor(d.S)).padStart(2,'0')}`;}
- return norm(v).replace('T',' ').replace(/\.\d+Z?$/,'');
-}
-async function importExcel(file){
+const escAlarm=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const byDay=new Map();
+function indexAlarms(){byDay.clear();for(const a of alarms){const k=String(a[0]||'').slice(0,10);if(!k)continue;if(!byDay.has(k))byDay.set(k,[]);byDay.get(k).push(a)}for(const a of byDay.values())a.sort((x,y)=>String(x[0]).localeCompare(String(y[0])))}
+window.renderMergedDay=function(key,comments){
+ const events=[];
+ for(const c of comments){const match=String(c).match(/^\[(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2})?)/);events.push({time:match?match[2]:'',html:renderComment(c),order:0})}
+ for(const a of byDay.get(key)||[]){const time=String(a[0]).slice(11,19);events.push({time,order:1,html:`<div class="comment-item structured alarm-event" tabindex="0" role="button" aria-expanded="false"><div class="comment-meta">🔔 ${escAlarm(time)} · ${escAlarm(a[1])} · ${escAlarm(a[2])}<span class="comment-hint">Allarme Excel · clic per dettagli</span></div><div class="comment-detail"><b>Descrizione:</b> ${escAlarm(a[3]||'—')}<div><b>Inizio:</b> ${escAlarm(a[0])}</div><div><b>Ripristino:</b> ${escAlarm(a[4]||'Non indicato')}</div></div></div>`})}
+ events.sort((a,b)=>a.time.localeCompare(b.time)||a.order-b.order);
+ return `<div class="hint" style="margin-bottom:10px">${comments.length} commenti Word · ${(byDay.get(key)||[]).length} allarmi Excel · ordine cronologico</div>`+(events.map(e=>e.html).join('')||'<div class="empty">Nessun commento o allarme in questo giorno.</div>');
+};
+indexAlarms();
+// Quando l'HTML è servito da un server, legge sempre il file Excel fisso dalla stessa cartella.
+async function reloadFixedExcel(){
  try{
-  syncStatus.textContent='Lettura Excel in corso…';
-  if(!window.XLSX)throw new Error('Libreria Excel non disponibile: verifica la connessione Internet.');
-  const book=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
-  const sheet=book.Sheets['Hist_Alarms'];if(!sheet)throw new Error('Foglio Hist_Alarms non trovato.');
-  const records=XLSX.utils.sheet_to_json(sheet,{defval:'',raw:true});
-  if(!records.length)throw new Error('Il foglio Hist_Alarms è vuoto.');
-  const headers=Object.keys(records[0]);
-  const pick=(r,aliases)=>{const key=headers.find(h=>aliases.includes(h.toLowerCase().replace(/[^a-z0-9]/g,'')));return key?r[key]:''};
-  const result=records.map(r=>[
-   excelDate(pick(r,['tsalarm','dataallarme'])),
-   norm(pick(r,['area','zone','zona','destination'])),
-   norm(pick(r,['alarmcode','codiceallarme'])),
-   norm(pick(r,['alarmdescription','description','descrizione'])),
-   excelDate(pick(r,['tsreset','tsrestore','tsend','datafine','tsack'])),
-   norm(pick(r,['exclude','escludere'])),
-   norm(pick(r,['id']))
-  ]).filter(r=>r[0]);
-  if(!result.length)throw new Error('Nessuna data allarme riconosciuta. Colonne: '+headers.join(', '));
-  alarms=result;alarms.sort((a,b)=>b[0].localeCompare(a[0]));refreshZones();update();lastFile=file;
-  syncStatus.textContent=`✓ Excel aggiornato: ${result.length.toLocaleString('it-IT')} allarmi · ${file.name} · ${new Date().toLocaleString('it-IT')}`;
- }catch(err){syncStatus.textContent='Errore aggiornamento: '+err.message;}
+  const res=await fetch('Tabella ALLARMI 2 DEFINITIVO.xlsx?ts='+Date.now(),{cache:'no-store'});
+  if(!res.ok)throw new Error('Excel non disponibile');
+  if(!window.XLSX)throw new Error('Libreria XLSX non disponibile');
+  const book=XLSX.read(await res.arrayBuffer(),{type:'array',cellDates:true});const sheet=book.Sheets['Hist_Alarms'];if(!sheet)throw new Error('Foglio Hist_Alarms non trovato');
+  const rows=XLSX.utils.sheet_to_json(sheet,{defval:'',raw:true});
+  const norm=v=>String(v??'').trim();
+  const date=v=>{if(v instanceof Date)return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')} ${[v.getHours(),v.getMinutes(),v.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':')}`;if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v);if(d)return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')} ${[d.H,d.M,Math.floor(d.S)].map(n=>String(n).padStart(2,'0')).join(':')}`}return norm(v).replace('T',' ').replace(/\.\d+Z?$/,'')};
+  if(rows.length){const headers=Object.keys(rows[0]);const pick=(r,keys)=>{const k=headers.find(h=>keys.includes(h.toLowerCase().replace(/[^a-z0-9]/g,'')));return k?r[k]:''};const updated=rows.map(r=>[date(pick(r,['tsalarm','dataallarme'])),norm(pick(r,['area','zone','zona','destination'])),norm(pick(r,['alarmcode','codiceallarme'])),norm(pick(r,['alarmdescription','description','descrizione'])),date(pick(r,['tsreset','tsrestore','tsend','datafine','tsack']))]).filter(a=>a[0]);if(updated.length){alarms=updated;indexAlarms()}}
+  }
+  const selected=document.getElementById('commentsTitle').textContent.match(/\d{4}-\d{2}-\d{2}/);if(selected)showComments(selected[0]);
+  document.getElementById('excelFixedStatus').textContent=`Excel actualizado: ${alarms.length.toLocaleString('es-ES')} alarmas`;
+ }catch(e){document.getElementById('excelFixedStatus').textContent='Datos Excel integrados · Para actualizar automáticamente, abrir desde un servidor con el Excel en la misma carpeta.'}
 }
-fileInput.addEventListener('change',()=>{if(fileInput.files[0])importExcel(fileInput.files[0]);});
-document.getElementById('alarmConnect').addEventListener('click',async()=>{
- if(!window.showOpenFilePicker){syncStatus.textContent='Il collegamento diretto non è supportato da questo browser. Usa Seleziona file Excel.';fileInput.click();return;}
- try{[linkedHandle]=await window.showOpenFilePicker({types:[{description:'File Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx']}}]});await importExcel(await linkedHandle.getFile());}
- catch(e){if(e.name!=='AbortError')syncStatus.textContent='Impossibile collegare Excel: '+e.message;}
-});
-document.getElementById('alarmRefresh').addEventListener('click',async()=>{
- if(linkedHandle)await importExcel(await linkedHandle.getFile());
- else if(lastFile)await importExcel(lastFile);
- else fileInput.click();
-});
-
-window.selectExcelAlarmDay=function(d){day.value=d;update()};
-update();
+reloadFixedExcel();
+document.getElementById('reload').addEventListener('click',reloadFixedExcel);
 })();
 </script></body></html>
