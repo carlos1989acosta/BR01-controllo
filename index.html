@@ -364,14 +364,19 @@ async function reloadData(){
  if(outcomes[0].status==='fulfilled')allData=outcomes[0].value;
  else allData={days:[],comments:{},hours:Array.from({length:16},(_,i)=>String(i+6))};
  if(outcomes[1].status==='fulfilled')window.mergeExcelDays();
- refreshMonths();render();
+ refreshMonths();
+ // Aggiorna dati: annulla il filtro del singolo giorno e mostra tutto il mese selezionato.
+ selectedErrorDay=null;
+ render();
+ const errorBox=document.getElementById('errorComments');
+ if(errorBox)errorBox.innerHTML='<div class="empty">Dati del mese aggiornati. Seleziona un settore della torta per vedere gli errori, oppure un giorno nel grafico per filtrare.</div>';
  const parts=[outcomes[0].status==='fulfilled'?`Word: ${allData.days.length} giorni caricati`:`Word: ERRORE ${outcomes[0].reason.message}`,outcomes[1].status==='fulfilled'?`Excel: ${outcomes[1].value.toLocaleString('it-IT')} allarmi aggiornati`:`Excel: ERRORE ${outcomes[1].reason.message}`];
  st.className=outcomes.every(x=>x.status==='fulfilled')?'ok':'error';st.textContent=parts.join(' · ');
  if(ex)ex.textContent=outcomes[1].status==='fulfilled'?`Excel aggiornato dal file fisso: ${outcomes[1].value.toLocaleString('it-IT')} allarmi`:'Excel non caricato: '+outcomes[1].reason.message;
 }
 document.getElementById('reload').addEventListener('click',reloadData);
 document.getElementById('print').addEventListener('click',()=>window.print());
-document.getElementById('month').addEventListener('change',()=>{selectedErrorDay=null;render();const errorBox=document.getElementById('errorComments');if(errorBox)errorBox.innerHTML='<div class="empty">Selecciona un día en la gráfica para filtrar sus errores.</div>';});
+document.getElementById('month').addEventListener('change',()=>{selectedErrorDay=null;render();const errorBox=document.getElementById('errorComments');if(errorBox)errorBox.innerHTML='<div class="empty">Dati del mese selezionato. Seleziona un settore della torta per vedere gli errori, oppure un giorno nel grafico per filtrare.</div>';});
 setTimeout(reloadData,0);
 </script>
 <script>
