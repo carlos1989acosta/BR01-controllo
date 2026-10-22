@@ -138,7 +138,7 @@ input,button,select{border-radius:9px;border-color:#cfe1ef}button{background:lin
 
 </main>
 <script>
-let allData={days:[],comments:{},hours:Array.from({length:16},(_,i)=>String(i+6))},chart,errorPie;
+let allData={days:[],comments:{},hours:Array.from({length:16},(_,i)=>String(i+6))},chart,errorPie,selectedErrorDay=null;
 const months={ene:0,feb:1,mar:2,abr:3,may:4,jun:5,jul:6,ago:7,sep:8,set:8,ott:9,oct:9,nov:10,dic:11};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function iso(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
@@ -178,20 +178,23 @@ function errorCategory(code,area){
  return (!code || /^(SIN[\s_-]*CODIGO|SENZA[\s_-]*CODICE|NO[\s_-]*CODIGO|N\/A|NONE|-)$/.test(code) || /^(ALTRI[\s_-]*ERRORI|OTROS[\s_-]*ERRORES|OTHER[\s_-]*ERRORS)$/.test(area))?'ALTRI ERRORI':code;
 }
 function errorEvents(days,comments){
+ const selectedDay=selectedErrorDay;
  const month=document.getElementById('month')?.value||'';const visible=new Set(days.map(d=>d.key)),events=[];
  for(const [date,list] of Object.entries(comments)){
-  if(!visible.has(date) || date<'2026-08-01')continue;
+  if(!visible.has(date) || date<'2026-08-01' || (selectedDay && date!==selectedDay))continue;
   for(const line of list||[]){const text=String(line),cm=text.match(/\[CODIGO\s*:\s*([^\]]*)\]/i),am=text.match(/\[AREA\s*:\s*([^\]]*)\]/i);
    if(cm&&am)events.push({category:errorCategory(cm[1],am[1]),date,source:'word',text});
   }
  }
  for(const a of (window.getExcelAlarms?window.getExcelAlarms():[])){
-  const date=String(a[0]||'').slice(0,10);if(date<'2026-08-01' || (month && !date.startsWith(month)))continue;
+  const date=String(a[0]||'').slice(0,10);if(date<'2026-08-01' || (month && !date.startsWith(month)) || (selectedDay && date!==selectedDay))continue;
   events.push({category:errorCategory(a[2],a[1]),date,source:'excel',alarm:a});
  }
  return events;
 }
 function renderErrorPie(days,comments){
+ const pieTitle=document.querySelector('#errorPie')?.closest('.card')?.querySelector('h2');
+ if(pieTitle)pieTitle.textContent=selectedErrorDay?'Errori per codice · '+selectedErrorDay:'Errori per codice · seleziona un giorno';
  const events=errorEvents(days,comments),counts={};
  for(const e of events)counts[e.category]=(counts[e.category]||0)+1;
  const entries=Object.entries(counts).sort((a,b)=>a[0]==='ALTRI ERRORI'?1:b[0]==='ALTRI ERRORI'?-1:b[1]-a[1]||a[0].localeCompare(b[0]));
@@ -233,6 +236,7 @@ function refreshMonths(){
 function filtered(){const m=document.getElementById('month').value;return allData.days.filter(d=>!m||d.key.startsWith(m));}
 function render(){
  const days=filtered(),comments=allData.comments;
+ if(selectedErrorDay && !days.some(d=>d.key===selectedErrorDay))selectedErrorDay=null;
  renderErrorPie(days,comments);
  const total=days.reduce((s,d)=>s+d.total,0),cc=days.reduce((s,d)=>s+(comments[d.key]?.length||0),0);
  daysEl.textContent=days.length;
@@ -347,7 +351,7 @@ function renderComment(x){
  return `<div class="comment-item">${esc(text)}</div>`;
 }
 function bindCommentClicks(){document.querySelectorAll('.comment-item.structured').forEach(el=>{const toggle=()=>{el.classList.toggle('open');el.setAttribute('aria-expanded',el.classList.contains('open')?'true':'false')};el.addEventListener('click',toggle);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}})})}
-function showComments(key){const list=allData.comments[key]||[],day=allData.days.find(d=>d.key===key);const vals=day?.values||[];const mt=vals.slice(0,8).reduce((a,b)=>a+(Number(b)||0),0),at=vals.slice(8,16).reduce((a,b)=>a+(Number(b)||0),0);morningShift.textContent=`Totale: ${mt} · Media: ${(mt/8).toFixed(1)}`;afternoonShift.textContent=`Totale: ${at} · Media: ${(at/8).toFixed(1)}`;commentsTitle.textContent='Commenti e allarmi del giorno: '+key;const shown=[...vals];while(shown.length<16)shown.push('—');const horarios=Array.from({length:16},(_,i)=>`${String(i+6).padStart(2,'0')}:00–${String(i+7).padStart(2,'0')}:00`);prelieviRow.innerHTML=`<span>Prelievi effettuati · ${esc(day?.label||key)}:</span>`+shown.map((v,i)=>`<span class="v"><small>${horarios[i]}</small><strong class="prelievo-val ${Number(v)>=18?'prelievo-verde':Number(v)>=14?'prelievo-arancio':Number(v)>0?'prelievo-rosso':'prelievo-neutro'}">${esc(v)}</strong></span>`).join('')+`<span class="v total"><small>Totale del giorno</small><strong>${day?.total??0}</strong></span>`;commentsContent.innerHTML=window.renderMergedDay?window.renderMergedDay(key,list): (list.length?list.map(renderComment).join(''):'<div class="empty">Nessun commento.</div>');bindCommentClicks()}
+function showComments(key){selectedErrorDay=key;renderErrorPie(filtered(),allData.comments);const errorBox=document.getElementById('errorComments');if(errorBox)errorBox.innerHTML='<div class="empty">Selecciona un sector para ver los errores del día '+esc(key)+'.</div>';const list=allData.comments[key]||[],day=allData.days.find(d=>d.key===key);const vals=day?.values||[];const mt=vals.slice(0,8).reduce((a,b)=>a+(Number(b)||0),0),at=vals.slice(8,16).reduce((a,b)=>a+(Number(b)||0),0);morningShift.textContent=`Totale: ${mt} · Media: ${(mt/8).toFixed(1)}`;afternoonShift.textContent=`Totale: ${at} · Media: ${(at/8).toFixed(1)}`;commentsTitle.textContent='Commenti e allarmi del giorno: '+key;const shown=[...vals];while(shown.length<16)shown.push('—');const horarios=Array.from({length:16},(_,i)=>`${String(i+6).padStart(2,'0')}:00–${String(i+7).padStart(2,'0')}:00`);prelieviRow.innerHTML=`<span>Prelievi effettuati · ${esc(day?.label||key)}:</span>`+shown.map((v,i)=>`<span class="v"><small>${horarios[i]}</small><strong class="prelievo-val ${Number(v)>=18?'prelievo-verde':Number(v)>=14?'prelievo-arancio':Number(v)>0?'prelievo-rosso':'prelievo-neutro'}">${esc(v)}</strong></span>`).join('')+`<span class="v total"><small>Totale del giorno</small><strong>${day?.total??0}</strong></span>`;commentsContent.innerHTML=window.renderMergedDay?window.renderMergedDay(key,list): (list.length?list.map(renderComment).join(''):'<div class="empty">Nessun commento.</div>');bindCommentClicks()}
 
 const daysEl=document.getElementById('days'),totalEl=document.getElementById('total'),avgEl=document.getElementById('avg'),morningShift=document.getElementById('morningShift'),afternoonShift=document.getElementById('afternoonShift'),prelieviRow=document.getElementById('prelieviRow');
 async function reloadData(){
