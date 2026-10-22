@@ -194,7 +194,7 @@ function errorEvents(days,comments){
 }
 function renderErrorPie(days,comments){
  const pieTitle=document.querySelector('#errorPie')?.closest('.card')?.querySelector('h2');
- if(pieTitle)pieTitle.textContent=selectedErrorDay?'Errori per codice · '+selectedErrorDay:'Errori per codice · seleziona un giorno';
+ if(pieTitle)pieTitle.textContent=selectedErrorDay?'Errori per codice · '+selectedErrorDay:'Errori per codice · '+(document.getElementById('month').selectedOptions[0]?.textContent||'Tutti i mesi');
  const events=errorEvents(days,comments),counts={};
  for(const e of events)counts[e.category]=(counts[e.category]||0)+1;
  const entries=Object.entries(counts).sort((a,b)=>a[0]==='ALTRI ERRORI'?1:b[0]==='ALTRI ERRORI'?-1:b[1]-a[1]||a[0].localeCompare(b[0]));
@@ -371,7 +371,7 @@ async function reloadData(){
 }
 document.getElementById('reload').addEventListener('click',reloadData);
 document.getElementById('print').addEventListener('click',()=>window.print());
-document.getElementById('month').addEventListener('change',render);
+document.getElementById('month').addEventListener('change',()=>{selectedErrorDay=null;render();const errorBox=document.getElementById('errorComments');if(errorBox)errorBox.innerHTML='<div class="empty">Selecciona un día en la gráfica para filtrar sus errores.</div>';});
 setTimeout(reloadData,0);
 </script>
 <script>
